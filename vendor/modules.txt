@@ -1,0 +1,25 @@
+# github.com/emersion/go-sasl v0.0.0-20190520160400-47d427600317
+github.com/emersion/go-sasl
+# github.com/emersion/go-smtp v0.11.1
+github.com/emersion/go-smtp
+# github.com/gol4ng/logger v0.3.0
+github.com/gol4ng/logger
+github.com/gol4ng/logger/formatter
+github.com/gol4ng/logger/handler
+github.com/gol4ng/logger/middleware
+github.com/gol4ng/logger/socket
+github.com/gol4ng/logger/writer
+github.com/gol4ng/logger/writer/provider
+# github.com/gol4ng/signal v1.1.0
+github.com/gol4ng/signal
+# github.com/gorilla/mux v1.7.2
+github.com/gorilla/mux
+# github.com/heetch/confita v0.8.0
+github.com/heetch/confita
+github.com/heetch/confita/backend
+github.com/heetch/confita/backend/env
+github.com/heetch/confita/backend/flags
+# github.com/joho/godotenv v1.3.0
+github.com/joho/godotenv
+# github.com/pkg/errors v0.8.1
+github.com/pkg/errors

@@ -1,0 +1,8 @@
+EHLO localhost
+AUTH PLAIN
+AHVzZXJuYW1lAHBhc3N3b3Jk
+MAIL FROM:<root@nsa.gov>
+RCPT TO:<root@gchq.gov.uk>
+MAIL FROM:<asasasasas@nsa.gov>
+DATA
+Hey <3
