@@ -1,5 +1,7 @@
 # Logger
 
+<img src="logo.png" alt="gol4ng/logger: Golang logger" title="A new golang logger" align="right" width="200px">
+
 [![Go Report Card](https://goreportcard.com/badge/github.com/gol4ng/logger)](https://goreportcard.com/report/github.com/gol4ng/logger)
 [![Maintainability](https://api.codeclimate.com/v1/badges/a234f5fd2bcae54ed85e/maintainability)](https://codeclimate.com/github/gol4ng/logger/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/a234f5fd2bcae54ed85e/test_coverage)](https://codeclimate.com/github/gol4ng/logger/test_coverage)
@@ -7,6 +9,11 @@
 [![GoDoc](https://godoc.org/github.com/gol4ng/logger?status.svg)](https://godoc.org/github.com/gol4ng/logger)
 
 Gol4ng/Logger is another GO logger. The main line is to provide a friendly and fast API to send your log whenever you want. 
+
+## Why another one?
+
+When i start GO i searched a logger that can be **simple to use**, **efficient**, **multi output**, **multi formats** and quite easy to **extend**. 
+That's why i created this logger with built-in [handlers](#Handlers)(process a log), [formatters](#formatters)(format log in another representation), [middlewares](#middlewares)(log modification before handler)
 
 ## Installation
 
@@ -28,12 +35,12 @@ import (
 
 func main(){
 	// logger will print on STDOUT with default line format
-	l := logger.NewLogger(handler.Stream(os.Stdout, formatter.NewDefaultFormatter()))
+	l := logger.NewLogger(handler.Stream(os.Stdout, formatter.NewDefaultFormatter(formatter.WithContext(true))))
 	
-	l.Debug("Go debug informations", logger.Ctx("go_os", runtime.GOOS).Add("go_arch", runtime.GOARCH))
+	l.Debug("Go debug information", logger.String("go_os", runtime.GOOS), logger.String("go_arch", runtime.GOARCH))
 	// <debug> MyExample message {"go_arch":"amd64","go_os":"darwin"}
 	
-	l.Info("Another", nil)
+	l.Info("Another")
     //<info> Another
 }
 ```
@@ -45,7 +52,7 @@ This library expose some quite simple interfaces.
 Simplest one
 ```go
 type LogInterface interface {
-	Log(message string, level Level, context *Context) error
+	Log(message string, level Level, field ...Field)
 }
 ```
 
@@ -53,14 +60,14 @@ The friendly one
 ```go
 type LoggerInterface interface {
 	LogInterface
-	Debug(message string, context *Context) error
-	Info(message string, context *Context) error
-	Notice(message string, context *Context) error
-	Warning(message string, context *Context) error
-	Error(message string, context *Context) error
-	Critical(message string, context *Context) error
-	Alert(message string, context *Context) error
-	Emergency(message string, context *Context) error
+	Debug(message string, field ...Field)
+	Info(message string, field ...Field)
+	Notice(message string, field ...Field)
+	Warning(message string, field ...Field)
+	Error(message string, field ...Field)
+	Critical(message string, field ...Field)
+	Alert(message string, field ...Field)
+	Emergency(message string, field ...Field)
 }
 ```
 
@@ -90,15 +97,16 @@ Available formatters:
 
 ## Middlewares
 
-The middleware are handler decorator/wrapper. It will allow you to do some process arround child handler 
+The middleware are handler decorator/wrapper. It will allow you to do some process around child handler 
 
 Available middleware:
 - **caller** _it will add caller file/line to context_ `<file:/my/example/path/file> <line:31>`
-- **context** _it permit to have a default context value_ usefull when you want to set global context value
+- **context** _it permit to have a default context value_ useful when you want to set global context value
 - **error** _it will print provided handler error_ (can be configure to silent it)
 - **filter** _it will permit to filter log entry_ level filter are available or you can use your own callback filter
 - **placeholder** _it will replace log message placeholder with contextual value_
 - **recover** _it will convert handler panic to error_
+- **timestamp** _it will add timestamp to log context_
 
 ## Writers
 
@@ -108,18 +116,17 @@ Available writer:
 - **compress** _it will compress log to gzip/zlib_
 - **gelf_chunked** _it will chunked log entry into gelf chunk_
 - **rotate** _it will write in io.Writer and rotate writer on demand_
-- **time rotate** _it's a rotate writer that rorate with `time.Ticker`_
+- **time_rotate** _it's a rotate writer that rotate with `time.Ticker`_
 
 ### Todo
 - benchmark
-- improve err handling
 - Implement all the handler
     - SSE http endpoint
     - websocket server 
     - socket server
     - https://craig.is/writing/chrome-logger
     - fingercross
-    - grpc / protobuff
+    - grpc / protobuf
     - curl
     - Mail
     - Slack
@@ -153,5 +160,4 @@ Available writer:
  
 ### Idea
 
-- add shortcut to log time.now
 - log server with log routing

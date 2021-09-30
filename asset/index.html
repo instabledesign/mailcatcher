@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Mail Catcher</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width"/>
+    <script src="https://unpkg.com/react@latest/umd/react.development.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@latest/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@material-ui/core@5.0.0-beta.2/umd/material-ui.development.js"
+            crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/babel-standalone@latest/babel.min.js" crossorigin="anonymous"></script>
+    <!-- Fonts to support Material Design -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"/>
+    <!-- Icons to support Material Design -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
+</head>
+<body>
+<div id="root"></div>
+<!--TODO BUILD PROD-->
+<script type="text/babel">
+    const {
+        PropTypes,
+
+        colors,
+        createTheme,
+
+        CssBaseline,
+        ThemeProvider,
+        Typography,
+        Container,
+        Collapse,
+        Checkbox,
+        CircularProgress,
+        Box,
+        SvgIcon,
+        Chip,
+        SwipeableDrawer,
+        List,
+        Alert,
+        AlertTitle,
+        AppBar,
+        Badge,
+        Button,
+
+        Grid,
+        IconButton,
+        ListItem,
+        Link,
+        Divider,
+        Toolbar,
+        Icon,
+        Paper,
+        Tab,
+        Tabs,
+        Table,
+        TableCell,
+        TableContainer,
+        TableHead,
+        TableRow,
+        TableBody,
+        LinearProgress,
+
+    } = MaterialUI;
+
+    const theme = createTheme({
+        palette: {
+            // primary: {
+            //     main: '#000',
+            // },
+            // secondary: {
+            //     main: '#19857b',
+            // },
+            // error: {
+            //     main: colors.red.A400,
+            // },
+            // background: {
+            //     default: '#fff',
+            // },
+        },
+    });
+
+    // https://stackoverflow.com/questions/56554586/how-to-use-usestyle-to-style-class-component-in-material-ui
+    // const useStyles = makeStyles(theme => ({
+    //     offset: theme.mixins.toolbar,
+    //     root: {
+    //         margin: theme.spacing(6, 0, 3),
+    //     },
+    //     table: {
+    //         minWidth: 650,
+    //     },
+    //     menuButton: {
+    //         marginRight: 36,
+    //     },
+    //     menuButtonHidden: {
+    //         display: 'none',
+    //     },
+    //     title: {
+    //         flexGrow: 1,
+    //     },
+    // }));
+
+    function TabPanel(props) {
+        const {children, value, index, ...other} = props;
+
+        return (
+            <div
+                role="tabpanel"
+                hidden={value !== index}
+                id={`simple-tabpanel-${index}`}
+                aria-labelledby={`simple-tab-${index}`}
+                {...other}
+            >
+                {value === index && (
+                    <Box sx={{p: 3}}>
+                        <Typography>{children}</Typography>
+                    </Box>
+                )}
+            </div>
+        );
+    }
+
+    TabPanel.propTypes = {
+        // children: PropTypes.node,
+        // index: PropTypes.number.isRequired,
+        // value: PropTypes.number.isRequired,
+    };
+
+    function a11yProps(index) {
+        return {
+            id: `simple-tab-${index}`,
+            'aria-controls': `simple-tabpanel-${index}`,
+        };
+    }
+
+    function EmailDetail(props) {
+        const {mail} = props
+        const [value, setValue] = React.useState(0);
+        const handleChange = (event, newValue) => {
+            setValue(newValue);
+        };
+
+        return (
+            <Box sx={{width: '100%'}}>
+                <Box sx={{borderBottom: 1, borderColor: 'divider'}}>
+                    <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
+                        <Tab label="HTML" {...a11yProps(0)} />
+                        <Tab label="Text" {...a11yProps(1)} />
+                        <Tab label="Source" {...a11yProps(2)} />
+                    </Tabs>
+                </Box>
+                <TabPanel value={value} index={0}>
+                    mail
+                </TabPanel>
+                <TabPanel value={value} index={1}>
+                    TEXT VIEWER
+                </TabPanel>
+                <TabPanel value={value} index={2}>
+                    {mail.Data}
+                </TabPanel>
+            </Box>
+        );
+    }
+
+    function SwipeableTemporaryDrawer(props) {
+        const {mail} = props;
+        const [state, setState] = React.useState({
+            open: open,
+        });
+
+        const toggleDrawer = (anchor, open) => (event) => {
+            if (
+                event &&
+                event.type === 'keydown' &&
+                (event.key === 'Tab' || event.key === 'Shift')
+            ) {
+                return;
+            }
+
+            setState({...state, right: open});
+        };
+
+        return (
+            <React.Fragment key="right">
+                <SwipeableDrawer
+                    anchor="right"
+                    open={!!mail}
+                    onClose={toggleDrawer('right', false)}
+                    onOpen={toggleDrawer('right', true)}
+                >
+                    <Box
+                        sx={{
+                            bgcolor: 'primary.dark',
+                            '&:hover': {
+                                backgroundColor: 'primary.main',
+                                opacity: [0.9, 0.8, 0.7],
+                            },
+                        }}
+                        role="presentation"
+                        onClick={toggleDrawer('right', false)}
+                        onKeyDown={toggleDrawer('right', false)}
+                    >
+                        <EmailDetail mail={mail}/>
+                    </Box>
+                </SwipeableDrawer>
+            </React.Fragment>
+        );
+    }
+
+    function MailTable(props) {
+        const {mails, selectMail} = props
+
+        return (
+            <Grid container spacing={3}>
+                <Grid item xs={12} md={12} lg={12}>
+                    <TableContainer component={Paper}>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Email</TableCell>
+                                    <TableCell>From</TableCell>
+                                    <TableCell>To</TableCell>
+                                    <TableCell>Subject</TableCell>
+                                    <TableCell>Body</TableCell>
+                                    <TableCell align="right">Actions</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {mails.map((mail, i) => (
+                                    <MailRow key={"mail_" + i} mail={mail} onClick={selectMail}/>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Grid>
+            </Grid>
+        )
+    }
+
+    function MailRow(props) {
+        const {mail, onClick} = props;
+        const [open, setOpen] = React.useState(false);
+
+        return (
+            <React.Fragment>
+                <TableRow sx={{'& > *': {borderBottom: 'unset'}}} onClick={() => onClick(mail)}>
+                    <TableCell>
+                        <Checkbox/>
+                    </TableCell>
+                    <TableCell>
+                        <Chip label={mail.From} size="small"/>
+                    </TableCell>
+                    <TableCell>
+                        {mail.Tos.map((to, i) => (
+                            <Chip key={to + "_" + i} label={to} size="small"/>
+                        ))}
+                    </TableCell>
+                    <TableCell>{mail.Subject}</TableCell>
+                    <TableCell></TableCell>
+                    <TableCell align="right"><Button><Icon>delete</Icon></Button></TableCell>
+                </TableRow>
+            </React.Fragment>
+        );
+    }
+
+    function NoMail() {
+        return (
+            <Grid container spacing={3}>
+                <Grid item xs={12} md={12} lg={12}>
+                    <Paper
+                        elevation={3}
+                        sx={{
+                            p: 2,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            height: 240,
+                        }}
+                    >
+                        <Typography variant="h6" gutterBottom component="div">No email</Typography>
+                        <Typography variant="body1" paragraph>
+                            There is currently no mail to show
+                        </Typography>
+                        <Alert severity="info">
+                            <AlertTitle>Info</AlertTitle>
+                            Explanation for sending mail in smtp server
+                        </Alert>
+                    </Paper>
+                </Grid>
+            </Grid>
+        )
+    }
+
+    class App extends React.Component {
+        constructor(props) {
+            super(props);
+
+            this.state = {
+                mails: props.mails || [],
+                loading: false,
+                eventSourceState: null,
+                eventSource: null,
+            }
+        }
+
+        componentDidMount() {
+            this.getAll()
+            this.connectEventSource()
+        }
+
+        componentWillUnmount() {
+            this.disconnectEventSource()
+        }
+
+        setMails = (mails) => {
+            this.setState({mails: mails});
+        }
+
+        clear = () => {
+            this.setState({mails: []});
+        }
+
+        getAll = () => {
+            this.setState({loading: true});
+            fetch('/mails')
+                .then(function (response) {
+                    return response.json()
+                })
+                .then((responseJson) => {
+                    this.setState({loading: false});
+                    this.setMails(responseJson);
+                })
+                .catch(function (error) {
+                    this.setState({loading: false});
+                    console.log('Il y a eu un problème avec l\'opération fetch: ' + error.message);
+                });
+        }
+
+        connectEventSource = () => {
+            if (this.eventSource) {
+                this.disconnectEventSource()
+            }
+            const eventSource = new EventSource('/event');
+            eventSource.addEventListener("open", event => {
+                console.log("OPEN", event);
+                this.setState({eventSource: eventSource});
+            })
+
+            eventSource.addEventListener("error", event => {
+                if (eventSource.readyState === EventSource.CLOSED) {
+                    /* Traitement en cas de perte de connexion définitive avec le serveur */
+                    // this.setState({eventSource: eventSource});
+                }
+                if (eventSource.readyState === EventSource.CONNECTING) {
+                    /* En cas de perte de connexion temporaire avec le serveur */
+                    // this.setState({eventSource: eventSource});
+                }
+            })
+
+
+            eventSource.addEventListener("ping", event => {
+                // console.log("heartbeat", event);
+            });
+
+            eventSource.addEventListener("mail", event => {
+                this.setState(prevState => ({
+                    mails: [JSON.parse(event.data), ...prevState.mails]
+                }))
+            });
+
+            this.eventSource = eventSource
+        }
+
+        selectMail = (mail) => {
+            console.log("FGHGFYJ", mail)
+            this.setState({selectedMail: mail})
+        }
+
+        disconnectEventSource = () => {
+            if (this.eventSource) {
+                this.eventSource.close()
+                this.eventSource = null
+            }
+            this.setState({eventSource: null});
+        }
+
+        render() {
+            // const classes = useStyles();
+            return (
+                <React.Fragment>
+                    <AppBar position="fixed">
+                        <Toolbar>
+                            <Typography
+                                variant="h6"
+                                noWrap
+                                component="div"
+                                sx={{flexGrow: 1, display: {xs: 'none', sm: 'block'}}}
+                            >
+                                MailCatcher
+                            </Typography>
+                            <Button onClick={this.getAll} variant="inherit"><Icon
+                                fontSize="large">refresh</Icon></Button>
+                            <Button onClick={this.clear} variant="inherit"><Icon fontSize="large">delete</Icon></Button>
+                            <Button variant="inherit">
+                                {this.state.eventSource && this.state.eventSource.readyState === EventSource.OPEN ?
+                                    <Icon onClick={this.connectEventSource} sx={{color: colors.green[500]}}
+                                          fontSize="large">swap_vert</Icon>
+                                    :
+                                    <Icon onClick={this.connectEventSource} sx={{color: colors.red[500]}}
+                                          fontSize="large">mobiledata_off</Icon>
+                                }
+                            </Button>
+                        </Toolbar>
+                    </AppBar>
+                    <Box
+                        component="main"
+                        sx={{
+                            backgroundColor: (theme) =>
+                                theme.palette.mode === 'light'
+                                    ? theme.palette.grey[100]
+                                    : theme.palette.grey[900],
+                            flexGrow: 1,
+                            height: '100vh',
+                            overflow: 'auto',
+                        }}
+                    >
+                        <Toolbar/>
+                        {this.state.loading && <LinearProgress/>}
+                        <Container maxWidth={false} sx={{mt: 4, mb: 4}}>
+                            {this.state.mails.length === 0 && <NoMail/>}
+                            {this.state.mails.length > 0 &&
+                            <MailTable mails={this.state.mails} selectMail={this.selectMail}/>}
+                        </Container>
+                    </Box>
+                    <SwipeableTemporaryDrawer mail={this.state.selectedMail}/>
+                    <Typography variant="body2" color="textSecondary" align="center">
+                        {'Copyright © '}
+                        <Link color="inherit" href="https://github.com/instabledesign">Instabledesign</Link>
+                        {' | '}
+                        <Link color="inherit" href="https://github.com/instabledesign/mailcatcher">Source Code</Link>
+                        {' '}
+                        {new Date().getFullYear()}
+                        {'.'}
+                    </Typography>
+                </React.Fragment>
+            );
+        }
+    }
+
+    ReactDOM.render(
+        <ThemeProvider theme={theme}>
+            <CssBaseline/>
+            <App/>
+        </ThemeProvider>,
+        document.querySelector('#root'),
+    );
+</script>
+</body>
+</html>

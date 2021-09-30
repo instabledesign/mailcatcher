@@ -4,17 +4,18 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-
-	"github.com/gol4ng/mailcatcher/internal"
+	"time"
 )
 
-func Event(mailChan chan *internal.Mail) func(http.ResponseWriter, *http.Request) {
+func Event(broker *Broker) func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		conn, err := NewSSEConnHTTPHandler(writer, request)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		broker.newClients <- conn.writeChan
+		defer func() { broker.closingClients <- conn.writeChan }()
 		conn.Listen()
 		fmt.Println("client over")
 	}
@@ -37,17 +38,22 @@ func (c *SSEClient) WriteHeader(statusCode int) {
 	c.writer.WriteHeader(statusCode)
 }
 
-func (c *SSEClient) Event(name string, data []byte) (int, error) {
-	data = append([]byte("event: "), name...)
-	data = append([]byte("\ndata: "), data...)
+func (c *SSEClient) Event(eventType string, data []byte) (int, error) {
+	if eventType == "" {
+		eventType = "message"
+	}
 	data = append(data, "\n\n"...)
+	data = append([]byte("data: "), data...)
+	data = append([]byte("event: "+eventType+"\n"), data...)
 	return c.Write(data)
 }
 
-func (c *SSEClient) Data(data []byte) (int, error) {
-	data = append([]byte("data: "), data...)
-	data = append(data, "\n\n"...)
-	return c.Write(data)
+func (c *SSEClient) Ping() (int, error) {
+	return c.Write([]byte("event: ping\ndata:{\"time\":" + time.Now().Format(time.RFC3339) + "}\n\n"))
+}
+
+func (c *SSEClient) Message(data []byte) (int, error) {
+	return c.Event("message", data)
 }
 
 func (c *SSEClient) Write(data []byte) (int, error) {
@@ -84,20 +90,24 @@ func (c *SSEConn) Listen() {
 	c.client.Header().Set("Cache-Control", "no-cache")
 	c.client.Header().Set("Connection", "keep-alive")
 	c.client.Header().Set("Access-Control-Allow-Origin", "*")
+	c.client.Ping()
+	c.client.Flush()
 
 	end := c.request.Context().Done()
 	for {
 		select {
 		case <-end:
-			c.client.Data([]byte("server stopped"))
+			c.client.Event("close", []byte("server stopped"))
 			c.client.Flush()
 			return
 		case data := <-c.writeChan:
-			c.client.Data(data)
+			c.client.Event("mail", data)
+			c.client.Flush()
+		case <-time.Tick(5 * time.Second):
+			c.client.Ping()
 			c.client.Flush()
 		}
 	}
-	fmt.Println("LISTEN ENDED")
 }
 
 func NewSSEConn(client *SSEClient, request *http.Request) (*SSEConn, error) {
@@ -107,7 +117,7 @@ func NewSSEConn(client *SSEClient, request *http.Request) (*SSEConn, error) {
 	if request == nil {
 		return nil, errors.New("http.Request is mandatory")
 	}
-	return &SSEConn{client: client, request: request}, nil
+	return &SSEConn{client: client, request: request, writeChan: make(chan []byte, 5)}, nil
 }
 
 func NewSSEConnHTTPHandler(writer http.ResponseWriter, request *http.Request) (*SSEConn, error) {

@@ -2,65 +2,39 @@ package service
 
 import (
 	"context"
-
+	"github.com/emersion/go-smtp"
 	"github.com/gol4ng/logger"
-	"github.com/gol4ng/mailcatcher/config"
-	"github.com/gol4ng/mailcatcher/internal"
+	"github.com/instabledesign/mailcatcher/config"
+	"github.com/instabledesign/mailcatcher/internal"
+	"github.com/instabledesign/mailcatcher/internal/server/http/handler"
+	stop_dispatcher "github.com/gol4ng/stop-dispatcher"
+	"net/http"
 )
 
-type DeamonStatus int
-type Deamon interface {
-	Start(ctx context.Context) error
-	Stop(ctx context.Context) error
-	Statut(ctx context.Context) DeamonStatus
-}
-
-type App struct {
+type Container struct {
 	Cfg *config.Config
+
+	baseContext context.Context
 
 	mailHandler      internal.MailHandler
 	mailChan         chan *internal.Mail
 	mailChanNotifier *internal.MailChanNotifier
 	mailStorage      *internal.MailStorage
 
+	broker     *handler.Broker
+	httpServer *http.Server
+	smtpServer *smtp.Server
+
 	logger            logger.LoggerInterface
 	loggerMiddlewares logger.Middlewares
 
-	deamons []Deamon
+	stopDispatcher *stop_dispatcher.Dispatcher
 }
 
-func (container *App) GetMailHandler() internal.MailHandler {
-	if container.mailHandler == nil {
-		container.mailHandler = internal.NewMailHandlerComposite(
-			container.GetMailChanNotifier(),
-			container.GetMailStorage(),
-		)
-	}
-	return container.mailHandler
-}
-
-func (container *App) GetMailChan() chan *internal.Mail {
-	return container.mailChan
-}
-
-func (container *App) GetMailChanNotifier() *internal.MailChanNotifier {
-	if container.mailChanNotifier == nil {
-		container.mailChanNotifier = internal.NewMailChanNotifier(container.GetMailChan())
-	}
-	return container.mailChanNotifier
-}
-
-func (container *App) GetMailStorage() *internal.MailStorage {
-	if container.mailStorage == nil {
-		container.mailStorage = &internal.MailStorage{}
-	}
-	return container.mailStorage
-}
-
-
-func NewContainer(cfg *config.Config) *App {
-	return &App{
-		Cfg:      cfg,
-		mailChan: make(chan *internal.Mail, cfg.NotifBufferSize),
+func NewContainer(cfg *config.Config, ctx context.Context) *Container {
+	return &Container{
+		Cfg:         cfg,
+		baseContext: ctx,
+		mailChan:    make(chan *internal.Mail, cfg.NotifBufferSize),
 	}
 }

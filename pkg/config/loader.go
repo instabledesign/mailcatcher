@@ -7,10 +7,10 @@ import (
 
 	"github.com/heetch/confita"
 	"github.com/heetch/confita/backend"
-	"github.com/heetch/confita/backend/env"
 	"github.com/heetch/confita/backend/flags"
 
-	"github.com/gol4ng/mailcatcher/pkg/config/dotenv"
+	"github.com/instabledesign/mailcatcher/pkg/config/dotenv"
+	"github.com/instabledesign/mailcatcher/pkg/config/env"
 )
 
 var DefaultConfigLoader = NewDefaultConfigLoader()
@@ -32,13 +32,15 @@ func (cb *Loader) PrependBackends(backends ...backend.Backend) *Loader {
 }
 
 func (cb *Loader) Load(ctx context.Context, to interface{}) error {
-	backends := cb.backends[:0]
 	for _, b := range cb.backends {
 		if b != nil {
-			backends = append(backends, b)
+			err := confita.NewLoader(b).Load(ctx, to)
+			if err != nil {
+				return err
+			}
 		}
 	}
-	return confita.NewLoader(backends...).Load(ctx, to)
+	return nil
 }
 
 func (cb *Loader) LoadOrFatal(ctx context.Context, to interface{}) {

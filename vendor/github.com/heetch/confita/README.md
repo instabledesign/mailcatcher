@@ -16,6 +16,7 @@ Confita is a library that loads configuration from multiple backends and stores 
 - [etcd](https://github.com/coreos/etcd)
 - [Consul](https://www.consul.io/)
 - [Vault](https://www.vaultproject.io/)
+- [Amazon SSM](https://docs.aws.amazon.com/systems-manager/latest/userguide/what-is-systems-manager.html)
 
 ## Install
 
@@ -161,11 +162,13 @@ The `flags` backend allows to load individual configuration keys from the comman
 
 A `short` option is also supported.
 
+To update usage message on the command line, provide a `description` to the given field.
+
 ```go
 type Config struct {
   Host        string        `config:"host,short=h"`
   Port        uint32        `config:"port,short=p"`
-  Timeout     time.Duration `config:"timeout"`
+  Timeout     time.Duration `config:"timeout,description=timeout (in seconds) for failure"`
 }
 ```
 
@@ -183,7 +186,7 @@ Usage of ./bin:
   -p int
        (default 5656)
   -timeout duration
-       (default 10s)
+       timeout (in seconds) for failure (default 10s)
 ```
 
 ## License

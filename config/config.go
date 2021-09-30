@@ -2,11 +2,10 @@ package config
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/gol4ng/logger"
-	"github.com/gol4ng/mailcatcher/pkg/config"
+	"github.com/instabledesign/mailcatcher/pkg/config"
 )
 
 type Config struct {
@@ -30,7 +29,7 @@ type Config struct {
 func NewConfig() *Config {
 	cfg := &Config{
 		Debug:           false,
-		LogVerboseLevel: logger.LevelString(logger.ErrorLevel.String()),
+		LogVerboseLevel: logger.LevelString(logger.DebugLevel.String()),
 		LogLevel:        logger.LevelString(logger.InfoLevel.String()),
 
 		HTTPAddr:            ":1080",
@@ -47,6 +46,5 @@ func NewConfig() *Config {
 	}
 
 	config.LoadOrFatal(context.Background(), cfg)
-	fmt.Println(config.TableString(cfg))
 	return cfg
 }

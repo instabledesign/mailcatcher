@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gol4ng/mailcatcher/internal"
+	"github.com/instabledesign/mailcatcher/internal"
 )
 
 func Mail(mailStorage *internal.MailStorage) func(http.ResponseWriter, *http.Request) {

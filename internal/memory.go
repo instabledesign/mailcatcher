@@ -1,5 +1,7 @@
 package internal
 
+import "time"
+
 type User interface {
 	Identifier() string
 }
@@ -22,10 +24,18 @@ func (a *AnonymousUser) Identifier() string {
 }
 
 type Mail struct {
+	Time time.Time
 	User User
 	From string
-	To   string
+	Tos  []string
 	Data string
+}
+
+func NewMail(user User) *Mail {
+	return &Mail{
+		Time: time.Now(),
+		User: user,
+	}
 }
 
 type MailHandler interface {

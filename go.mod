@@ -1,13 +1,15 @@
-module github.com/gol4ng/mailcatcher
+module github.com/instabledesign/mailcatcher
 
-go 1.13
+go 1.16
 
 require (
-	github.com/emersion/go-sasl v0.0.0-20190520160400-47d427600317 // indirect
-	github.com/emersion/go-smtp v0.11.1
-	github.com/gol4ng/logger v0.3.0
-	github.com/gol4ng/signal v1.1.0
-	github.com/gorilla/mux v1.7.2
-	github.com/heetch/confita v0.8.0
+	github.com/emersion/go-smtp v0.14.0
+	github.com/gol4ng/logger v0.5.8
+	github.com/gol4ng/stop-dispatcher v0.4.1
+	github.com/google/go-cmp v0.3.1 // indirect
+	github.com/gorilla/mux v1.8.0
+	github.com/heetch/confita v0.9.2
 	github.com/joho/godotenv v1.3.0
+	github.com/stretchr/testify v1.6.1
+	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )

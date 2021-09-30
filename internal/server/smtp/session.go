@@ -3,9 +3,11 @@ package smtp
 import (
 	"io"
 	"io/ioutil"
+	"time"
 
+	"github.com/emersion/go-smtp"
 	"github.com/gol4ng/logger"
-	"github.com/gol4ng/mailcatcher/internal"
+	"github.com/instabledesign/mailcatcher/internal"
 )
 
 // A Session is returned after successful login.
@@ -17,41 +19,48 @@ type Session struct {
 }
 
 func (s *Session) resetMail() {
-	s.mail = &internal.Mail{User: s.user}
+	if s.mail == nil {
+		s.mail = &internal.Mail{}
+	}
+	s.mail.Time = time.Now()
+	s.mail.User = s.user
+	s.mail.From = ""
+	s.mail.Tos = []string{}
+	s.mail.Data = ""
 }
 
-func (s *Session) Mail(from string) error {
+func (s *Session) Mail(from string, opts smtp.MailOptions) error {
 	s.mail.From = from
-	_ = s.logger.Debug("mail from", logger.Ctx("from", s.mail.From))
+	s.logger.Debug("mail from", logger.Any("from", s.mail.From))
 	return nil
 }
 
 func (s *Session) Rcpt(to string) error {
-	s.mail.To = to
-	_ = s.logger.Debug("mail to", logger.Ctx("to", s.mail.To))
+	s.mail.Tos = append(s.mail.Tos, to)
+	s.logger.Debug("mail to", logger.Any("to", to))
 	return nil
 }
 
 func (s *Session) Data(r io.Reader) error {
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
-		_ = s.logger.Error("an error occured during data reception", logger.Ctx("data", string(b)).Add("err", err))
+		s.logger.Error("an error occured during data reception", logger.Any("data", string(b)), logger.Error("err", err))
 		s.resetMail()
 		return err
 	}
 	s.mail.Data = string(b)
-	_ = s.logger.Debug("data", logger.Ctx("data", s.mail.Data))
+	s.logger.Debug("data", logger.Any("data", s.mail.Data))
 	return nil
 }
 
 func (s *Session) Reset() {
 	s.mailHandler.Handle(s.mail)
-	_ = s.logger.Info("push mail", logger.Ctx("mail", s.mail))
+	s.logger.Info("push mail", logger.Any("mail", s.mail))
 	s.resetMail()
-	_ = s.logger.Debug("reset data", nil)
+	s.logger.Debug("reset data")
 }
 
 func (s *Session) Logout() error {
-	_ = s.logger.Debug("logout", nil)
+	s.logger.Debug("logout")
 	return nil
 }

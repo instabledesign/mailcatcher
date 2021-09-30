@@ -3,6 +3,8 @@ package flags
 import (
 	"context"
 	"flag"
+	"fmt"
+	"os"
 	"reflect"
 	"time"
 
@@ -11,11 +13,15 @@ import (
 )
 
 // Backend that loads configuration from the command line flags.
-type Backend struct{}
+type Backend struct {
+	flags *flag.FlagSet
+}
 
 // NewBackend creates a flags backend.
 func NewBackend() *Backend {
-	return new(Backend)
+	return &Backend{
+		flags: flag.CommandLine,
+	}
 }
 
 // LoadStruct takes a struct config, define flags based on it and parse the command line args.
@@ -33,72 +39,90 @@ func (b *Backend) LoadStruct(ctx context.Context, cfg *confita.StructConfig) err
 		switch {
 		case f.Value.Type().String() == "time.Duration":
 			var val time.Duration
-			flag.DurationVar(&val, f.Key, time.Duration(f.Default.Int()), "")
+			b.flags.DurationVar(&val, f.Key, time.Duration(f.Default.Int()), f.Description)
 			if f.Short != "" {
-				flag.DurationVar(&val, f.Short, time.Duration(f.Default.Int()), "")
+				b.flags.DurationVar(&val, f.Short, time.Duration(f.Default.Int()), shortDesc(f.Description))
 			}
 			// this function must be executed after the flag.Parse call.
 			defer func() {
 				// if the user has set the flag, save the value in the field.
-				if isFlagSet(f) {
+				if b.isFlagSet(f) {
 					f.Value.SetInt(int64(val))
 				}
 			}()
 		case k == reflect.Bool:
 			var val bool
-			flag.BoolVar(&val, f.Key, f.Default.Bool(), "")
+			b.flags.BoolVar(&val, f.Key, f.Default.Bool(), f.Description)
 			if f.Short != "" {
-				flag.BoolVar(&val, f.Short, f.Default.Bool(), "")
+				b.flags.BoolVar(&val, f.Short, f.Default.Bool(), shortDesc(f.Description))
 			}
 			defer func() {
-				if isFlagSet(f) {
+				if b.isFlagSet(f) {
 					f.Value.SetBool(val)
 				}
 			}()
 		case k >= reflect.Int && k <= reflect.Int64:
 			var val int
-			flag.IntVar(&val, f.Key, int(f.Default.Int()), "")
+			b.flags.IntVar(&val, f.Key, int(f.Default.Int()), f.Description)
 			if f.Short != "" {
-				flag.IntVar(&val, f.Short, int(f.Default.Int()), "")
+				b.flags.IntVar(&val, f.Short, int(f.Default.Int()), shortDesc(f.Description))
 			}
 			defer func() {
-				if isFlagSet(f) {
+				if b.isFlagSet(f) {
 					f.Value.SetInt(int64(val))
 				}
 			}()
 		case k >= reflect.Uint && k <= reflect.Uint64:
-			v := flag.Uint(f.Key, uint(f.Default.Uint()), "")
+			var val uint64
+			b.flags.Uint64Var(&val, f.Key, f.Default.Uint(), f.Description)
+			if f.Short != "" {
+				b.flags.Uint64Var(&val, f.Short, f.Default.Uint(), shortDesc(f.Description))
+			}
 			defer func() {
-				if isFlagSet(f) {
-					f.Value.SetUint(uint64(*v))
+				if b.isFlagSet(f) {
+					f.Value.SetUint(val)
 				}
 			}()
 		case k >= reflect.Float32 && k <= reflect.Float64:
-			v := flag.Float64(f.Key, f.Default.Float(), "")
+			var val float64
+			b.flags.Float64Var(&val, f.Key, f.Default.Float(), f.Description)
+			if f.Short != "" {
+				b.flags.Float64Var(&val, f.Short, f.Default.Float(), shortDesc(f.Description))
+			}
 			defer func() {
-				if isFlagSet(f) {
-					f.Value.SetFloat(*v)
+				if b.isFlagSet(f) {
+					f.Value.SetFloat(val)
 				}
 			}()
 		case k == reflect.String:
 			var val string
-			flag.StringVar(&val, f.Key, f.Default.String(), "")
+			b.flags.StringVar(&val, f.Key, f.Default.String(), f.Description)
 			if f.Short != "" {
-				flag.StringVar(&val, f.Short, f.Default.String(), "")
+				b.flags.StringVar(&val, f.Short, f.Default.String(), shortDesc(f.Description))
 			}
 			defer func() {
-				if isFlagSet(f) {
+				if b.isFlagSet(f) {
 					f.Value.SetString(val)
 				}
 			}()
 		default:
-			flag.Var(&flagValue{f}, f.Key, "")
+			b.flags.Var(&flagValue{f}, f.Key, f.Description)
 		}
 	}
 
-	flag.Parse()
+	// Note: in the usual case, when b.flags is flag.CommandLine, this will exit
+	// rather than returning an error.
+	return b.flags.Parse(os.Args[1:])
+}
 
-	return nil
+func (b *Backend) isFlagSet(config *confita.FieldConfig) bool {
+	ok := false
+	b.flags.Visit(func(f *flag.Flag) {
+		if f.Name == config.Key || f.Name == config.Short {
+			ok = true
+		}
+	})
+	return ok
 }
 
 type flagValue struct {
@@ -127,10 +151,6 @@ func (b *Backend) Name() string {
 	return "flags"
 }
 
-func isFlagSet(config *confita.FieldConfig) bool {
-	flagset := make(map[*confita.FieldConfig]bool)
-	flag.Visit(func(f *flag.Flag) { flagset[config] = true })
-
-	_, ok := flagset[config]
-	return ok
+func shortDesc(description string) string {
+	return fmt.Sprintf("%s (short)", description)
 }

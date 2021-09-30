@@ -2,9 +2,10 @@ package log
 
 import (
 	"encoding/json"
-	"github.com/gol4ng/logger"
 	"strings"
 	"time"
+
+	"github.com/gol4ng/logger"
 )
 
 // DefaultFormatter is the default Entry formatter

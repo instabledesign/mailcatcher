@@ -5,8 +5,8 @@ import (
 
 	"github.com/emersion/go-smtp"
 	"github.com/gol4ng/logger"
-	"github.com/gol4ng/mailcatcher/internal"
-	"github.com/gol4ng/mailcatcher/internal/correlation_id"
+	"github.com/instabledesign/mailcatcher/internal"
+	"github.com/instabledesign/mailcatcher/internal/correlation_id"
 )
 
 // The Server implements SMTP server methods.
@@ -28,11 +28,11 @@ func (s *Backend) Login(state *smtp.ConnectionState, username, password string) 
 	//	_ = logR.Notice("invalid username or password", logger.Ctx("remote_addr", state.RemoteAddr).Add("username", username).Add("password", password))
 	//	return nil, errors.New("invalid username or password")
 	//}
-	_ = logR.Debug(`successfully logged`, logger.Ctx("password", password))
+	logR.Debug(`successfully logged`, logger.Any("password", password))
 	u := &internal.LoggedUser{Username: username, Password: password}
 	return &Session{
 		user:        u,
-		mail:        &internal.Mail{User: u},
+		mail:        internal.NewMail(u),
 		mailHandler: s.mailHandler,
 		logger:      logR,
 	}, nil
@@ -45,7 +45,7 @@ func (s *Backend) AnonymousLogin(state *smtp.ConnectionState) (smtp.Session, err
 		fmt.Sprintf("[%s@%s] ", u.Username, state.RemoteAddr),
 		logger.Ctx("remote_addr", state.RemoteAddr).Add("username", u.Username),
 	)
-	_ = logR.Debug(`anonymous logged`, nil)
+	logR.Debug(`anonymous logged`)
 
 	return &Session{
 		user:        u,
